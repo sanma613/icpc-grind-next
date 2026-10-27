@@ -1,6 +1,7 @@
 import { API_BASE_URL, USE_MOCKS } from "./config";
-import { mockGetProblems } from "./mock/mockServer";
+import { mockGetProblems, mockLogin, mockRegister } from "./mock/mockServer";
 import { ProblemFilters } from "@/features/problems/domain/problem.types";
+import { LoginRequest, RegisterRequest } from "@/features/auth/domain/auth.types";
 
 export interface RequestOptions extends RequestInit {
   params?: Record<string, string | number | undefined>;
@@ -20,9 +21,19 @@ export async function httpClient<T>(endpoint: string, options: RequestOptions = 
       const filters = (options.params || {}) as ProblemFilters;
       return mockGetProblems(filters) as unknown as T;
     }
+
+    if (endpoint === "/api/auth/login" && options.method === "POST") {
+      const body = options.body ? JSON.parse(options.body as string) : {};
+      return mockLogin(body as LoginRequest) as unknown as T;
+    }
+
+    if (endpoint === "/api/auth/register" && options.method === "POST") {
+      const body = options.body ? JSON.parse(options.body as string) : {};
+      return mockRegister(body as RegisterRequest) as unknown as T;
+    }
   }
 
-  // Petición real por fetch
+  // Petición real por fetch al backend Express
   const url = new URL(endpoint.startsWith("http") ? endpoint : `${API_BASE_URL}${endpoint}`);
   if (options.params) {
     Object.entries(options.params).forEach(([key, val]) => {
@@ -53,6 +64,7 @@ export async function httpClient<T>(endpoint: string, options: RequestOptions = 
       localStorage.removeItem("icpc_token");
       localStorage.removeItem("icpc_user");
       document.cookie = "icpc_token=; path=/; max-age=0";
+      document.cookie = "icpc_role=; path=/; max-age=0";
       // eslint-disable-next-line @next/next/no-location-assign-relative-destination
       window.location.assign("/login");
     }
