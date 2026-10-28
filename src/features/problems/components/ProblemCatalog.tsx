@@ -3,25 +3,70 @@
 import { useProblems } from "../hooks/useProblems";
 import { ProblemCard } from "./ProblemCard";
 import { ProblemFiltersBar } from "./ProblemFiltersBar";
-import { useState } from "react";
+import { Pagination } from "@/features/common/components/Pagination";
+import { StatusMessage } from "@/features/common/components/StatusMessage";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { Suspense, useCallback, useMemo } from "react";
+import { Difficulty, PlatformSource, Topic } from "../domain/problem.types";
 
-export function ProblemCatalog() {
-  const [filters, setFilters] = useState({
-    topic: "all",
-    difficulty: "all",
-    source: "all",
-    q: "",
-    page: 1,
-  });
+function ProblemCatalogContent() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Lectura de parámetros de la URL según la rúbrica (?page=2, etc.)
+  const pageParam = Number(searchParams.get("page")) || 1;
+  const topicParam = (searchParams.get("topic") as Topic | "all") || "all";
+  const difficultyParam = (searchParams.get("difficulty") as Difficulty | "all") || "all";
+  const sourceParam = (searchParams.get("source") as PlatformSource | "all") || "all";
+  const queryParam = searchParams.get("q") || "";
+
+  const filters = useMemo(
+    () => ({
+      page: pageParam,
+      topic: topicParam,
+      difficulty: difficultyParam,
+      source: sourceParam,
+      q: queryParam,
+    }),
+    [pageParam, topicParam, difficultyParam, sourceParam, queryParam]
+  );
 
   const { problems, pagination, loading, error, refetch } = useProblems(filters);
 
-  const handleFilterChange = (partial: Partial<typeof filters>) => {
-    setFilters((prev) => ({
-      ...prev,
+  const updateUrlParams = useCallback(
+    (newParams: Record<string, string | number | undefined>) => {
+      const current = new URLSearchParams(Array.from(searchParams.entries()));
+
+      Object.entries(newParams).forEach(([key, val]) => {
+        if (val === undefined || val === "" || val === "all" || (key === "page" && val === 1)) {
+          current.delete(key);
+        } else {
+          current.set(key, String(val));
+        }
+      });
+
+      const search = current.toString();
+      const query = search ? `?${search}` : "";
+      router.push(`${pathname}${query}`, { scroll: false });
+    },
+    [router, pathname, searchParams]
+  );
+
+  const handleFilterChange = (partial: {
+    topic?: string;
+    difficulty?: string;
+    source?: string;
+    q?: string;
+  }) => {
+    updateUrlParams({
       ...partial,
-      page: 1, // reiniciar paginación al cambiar filtro
-    }));
+      page: 1, // reiniciar paginación al cambiar filtros
+    });
+  };
+
+  const handlePageChange = (newPage: number) => {
+    updateUrlParams({ page: newPage });
   };
 
   return (
@@ -43,24 +88,21 @@ export function ProblemCatalog() {
 
       {/* Estado: Error */}
       {!loading && error && (
-        <div className="py-12 px-6 border border-accent-red rounded-lg text-center bg-bg-secondary">
-          <p className="text-accent-red font-semibold mb-2">Error loading problems</p>
-          <p className="text-text-muted text-sm mb-4">{error}</p>
-          <button
-            onClick={() => refetch()}
-            className="px-4 py-1.5 text-xs font-mono rounded border border-border-color hover:border-accent-cyan text-text-primary cursor-pointer"
-          >
-            Retry
-          </button>
-        </div>
+        <StatusMessage
+          type="error"
+          title="Error loading problems"
+          message={error}
+          onRetry={refetch}
+        />
       )}
 
       {/* Estado: Vacío */}
       {!loading && !error && problems.length === 0 && (
-        <div className="py-16 text-center text-text-muted bg-bg-secondary border border-border-color rounded-lg">
-          <p className="text-base font-semibold mb-1">No problems match your criteria.</p>
-          <p className="text-sm">Try relaxing your search query or topic/difficulty filters.</p>
-        </div>
+        <StatusMessage
+          type="info"
+          title="No problems match your criteria"
+          message="Try relaxing your search query or topic/difficulty filters."
+        />
       )}
 
       {/* Estado: Éxito con tarjetas */}
@@ -72,30 +114,30 @@ export function ProblemCatalog() {
             ))}
           </div>
 
-          {/* Paginación simple */}
-          {pagination.totalPages > 1 && (
-            <div className="flex justify-center items-center gap-4 mt-8 pt-4 border-t border-border-color">
-              <button
-                disabled={filters.page <= 1}
-                onClick={() => setFilters((prev) => ({ ...prev, page: prev.page - 1 }))}
-                className="px-3 py-1 text-xs font-mono border border-border-color rounded disabled:opacity-40 disabled:cursor-not-allowed hover:border-accent-cyan cursor-pointer"
-              >
-                &larr; Prev
-              </button>
-              <span className="text-xs font-mono text-text-muted">
-                Page {pagination.page} of {pagination.totalPages} ({pagination.total} problems)
-              </span>
-              <button
-                disabled={filters.page >= pagination.totalPages}
-                onClick={() => setFilters((prev) => ({ ...prev, page: prev.page + 1 }))}
-                className="px-3 py-1 text-xs font-mono border border-border-color rounded disabled:opacity-40 disabled:cursor-not-allowed hover:border-accent-cyan cursor-pointer"
-              >
-                Next &rarr;
-              </button>
-            </div>
-          )}
+          <Pagination
+            currentPage={pagination.page}
+            totalPages={pagination.totalPages}
+            totalItems={pagination.total}
+            itemName="problems"
+            onPageChange={handlePageChange}
+            isLoading={loading}
+          />
         </>
       )}
     </div>
+  );
+}
+
+export function ProblemCatalog() {
+  return (
+    <Suspense
+      fallback={
+        <div className="py-16 text-center text-text-muted font-mono animate-pulse">
+          &gt; Initializing problem catalog...
+        </div>
+      }
+    >
+      <ProblemCatalogContent />
+    </Suspense>
   );
 }
