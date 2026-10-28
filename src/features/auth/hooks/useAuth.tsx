@@ -1,6 +1,12 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback, useSyncExternalStore } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useSyncExternalStore,
+} from "react";
 import { User, LoginRequest, RegisterRequest } from "../domain/auth.types";
 import { authService } from "../services/auth.service";
 import { useRouter } from "next/navigation";
@@ -31,35 +37,45 @@ function getServerSessionSnapshot(): string | null {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const rawUser = useSyncExternalStore(subscribeSession, getSessionSnapshot, getServerSessionSnapshot);
+  const rawUser = useSyncExternalStore(
+    subscribeSession,
+    getSessionSnapshot,
+    getServerSessionSnapshot,
+  );
   const router = useRouter();
 
   const user: User | null = rawUser ? JSON.parse(rawUser) : null;
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const login = useCallback(async (credentials: LoginRequest) => {
-    setIsSubmitting(true);
-    try {
-      await authService.login(credentials);
-      window.dispatchEvent(new Event("storage"));
-      router.push("/");
-      router.refresh();
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [router]);
+  const login = useCallback(
+    async (credentials: LoginRequest) => {
+      setIsSubmitting(true);
+      try {
+        await authService.login(credentials);
+        window.dispatchEvent(new Event("storage"));
+        router.push("/");
+        router.refresh();
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [router],
+  );
 
-  const register = useCallback(async (data: RegisterRequest) => {
-    setIsSubmitting(true);
-    try {
-      await authService.register(data);
-      window.dispatchEvent(new Event("storage"));
-      router.push("/");
-      router.refresh();
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [router]);
+  const register = useCallback(
+    async (data: RegisterRequest) => {
+      setIsSubmitting(true);
+      try {
+        await authService.register(data);
+        window.dispatchEvent(new Event("storage"));
+        router.push("/");
+        router.refresh();
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [router],
+  );
 
   const logout = useCallback(() => {
     authService.logout();

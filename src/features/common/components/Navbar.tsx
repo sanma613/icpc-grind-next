@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { useState } from "react";
 import { ThemeToggle } from "./ThemeToggle";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 
 export function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { user, isAuthenticated, isAdmin, logout } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 bg-bg-secondary border-b border-border-color transition-colors">
@@ -29,11 +31,44 @@ export function Navbar() {
                   Submit Problem
                 </Link>
               </li>
-              <li>
-                <Link href="/login" className="text-text-muted hover:text-accent-cyan transition-colors">
-                  Login
-                </Link>
-              </li>
+
+              {/* Rutas según estado de autenticación (Rúbrica) */}
+              {isAuthenticated && (
+                <li>
+                  <Link href="/my-suggestions" className="text-text-muted hover:text-text-primary transition-colors">
+                    My Suggestions
+                  </Link>
+                </li>
+              )}
+
+              {isAdmin && (
+                <li>
+                  <Link href="/admin" className="text-accent-cyan hover:underline transition-colors font-mono text-xs px-2 py-1 border border-accent-cyan/30 rounded bg-accent-cyan/10">
+                    [ Admin ]
+                  </Link>
+                </li>
+              )}
+
+              {isAuthenticated ? (
+                <li className="flex items-center gap-3">
+                  <span className="font-mono text-xs text-text-muted">
+                    {user?.name}
+                  </span>
+                  <button
+                    onClick={logout}
+                    type="button"
+                    className="text-xs text-accent-red hover:underline font-mono cursor-pointer"
+                  >
+                    Logout
+                  </button>
+                </li>
+              ) : (
+                <li>
+                  <Link href="/login" className="text-accent-cyan hover:underline transition-colors font-semibold">
+                    Login
+                  </Link>
+                </li>
+              )}
             </ul>
           </nav>
           <ThemeToggle />
@@ -75,11 +110,40 @@ export function Navbar() {
                 Submit Problem
               </Link>
             </li>
-            <li>
-              <Link href="/login" onClick={() => setMenuOpen(false)} className="block py-1 text-accent-cyan font-medium">
-                Login
-              </Link>
-            </li>
+            {isAuthenticated && (
+              <li>
+                <Link href="/my-suggestions" onClick={() => setMenuOpen(false)} className="block py-1 text-text-muted hover:text-text-primary">
+                  My Suggestions
+                </Link>
+              </li>
+            )}
+            {isAdmin && (
+              <li>
+                <Link href="/admin" onClick={() => setMenuOpen(false)} className="block py-1 text-accent-cyan font-mono text-xs">
+                  [ Admin Dashboard ]
+                </Link>
+              </li>
+            )}
+            {isAuthenticated ? (
+              <li className="pt-2 border-t border-border-color flex justify-between items-center">
+                <span className="font-mono text-xs text-text-muted">{user?.name}</span>
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    logout();
+                  }}
+                  className="text-xs text-accent-red font-mono cursor-pointer"
+                >
+                  Logout
+                </button>
+              </li>
+            ) : (
+              <li>
+                <Link href="/login" onClick={() => setMenuOpen(false)} className="block py-1 text-accent-cyan font-medium">
+                  Login / Register
+                </Link>
+              </li>
+            )}
           </ul>
         </nav>
       )}
