@@ -1,7 +1,10 @@
 "use client";
 
 import { useMySuggestions } from "../hooks/useMySuggestions";
+import { Pagination } from "@/features/common/components/Pagination";
+import { StatusMessage } from "@/features/common/components/StatusMessage";
 import Link from "next/link";
+import { useState } from "react";
 
 const STATUS_BADGES: Record<string, { label: string; className: string }> = {
   pending: {
@@ -19,7 +22,12 @@ const STATUS_BADGES: Record<string, { label: string; className: string }> = {
 };
 
 export function MySuggestionsList() {
-  const { suggestions, pagination, loading, error, refetch } = useMySuggestions(1);
+  const [page, setPage] = useState(1);
+  const { suggestions, pagination, loading, error, refetch } = useMySuggestions(page);
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+  };
 
   if (loading) {
     return (
@@ -31,16 +39,12 @@ export function MySuggestionsList() {
 
   if (error) {
     return (
-      <div className="p-8 border border-accent-red rounded-lg text-center bg-bg-secondary">
-        <p className="text-accent-red font-semibold mb-2">Error loading submissions</p>
-        <p className="text-sm text-text-muted mb-4">{error}</p>
-        <button
-          onClick={() => refetch()}
-          className="px-4 py-1.5 text-xs font-mono rounded border border-border-color hover:border-accent-cyan cursor-pointer"
-        >
-          Retry
-        </button>
-      </div>
+      <StatusMessage
+        type="error"
+        title="Error loading submissions"
+        message={error}
+        onRetry={refetch}
+      />
     );
   }
 
@@ -119,9 +123,13 @@ export function MySuggestionsList() {
         </table>
       </div>
 
-      <p className="text-xs font-mono text-text-muted text-right">
-        Total submissions: {pagination.total}
-      </p>
+      <Pagination
+        currentPage={pagination.page}
+        totalPages={pagination.totalPages}
+        totalItems={pagination.total}
+        itemName="submissions"
+        onPageChange={handlePageChange}
+      />
     </div>
   );
 }

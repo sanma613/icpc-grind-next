@@ -2,23 +2,27 @@
 
 import { useState } from "react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import { suggestionService } from "../services/suggestion.service";
+import { useCreateSuggestion } from "../hooks/useCreateSuggestion";
 import { Topic, Difficulty } from "@/features/problems/domain/problem.types";
 import { SuggestionFieldErrors } from "../domain/suggestion.types";
-import { HttpError } from "@/features/common/http";
+import { Button } from "@/features/common/components/Button";
+import { Input } from "@/features/common/components/Input";
 import Link from "next/link";
 
 export function SuggestProblemForm() {
   const { isAuthenticated } = useAuth();
+  const { createSuggestion, submitting, errors: apiErrors } = useCreateSuggestion();
+
   const [name, setName] = useState("");
   const [link, setLink] = useState("");
   const [topic, setTopic] = useState<Topic | "">("");
   const [difficulty, setDifficulty] = useState<Difficulty | "">("");
   const [description, setDescription] = useState("");
 
-  const [errors, setErrors] = useState<SuggestionFieldErrors>({});
-  const [submitting, setSubmitting] = useState(false);
+  const [localErrors, setLocalErrors] = useState<SuggestionFieldErrors>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const errors = { ...apiErrors, ...localErrors };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,37 +47,27 @@ export function SuggestProblemForm() {
     }
 
     if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
+      setLocalErrors(newErrors);
       return;
     }
 
-    setErrors({});
-    setSubmitting(true);
+    setLocalErrors({});
 
-    try {
-      await suggestionService.createSuggestion({
-        name: name.trim(),
-        link: link.trim(),
-        topic: topic as Topic,
-        difficulty: difficulty as Difficulty,
-        description: description.trim(),
-      });
+    const result = await createSuggestion({
+      name: name.trim(),
+      link: link.trim(),
+      topic: topic as Topic,
+      difficulty: difficulty as Difficulty,
+      description: description.trim(),
+    });
 
+    if (result) {
       setSuccessMessage("Problem suggestion added to review queue successfully!");
-      // Limpiar formulario tras éxito
       setName("");
       setLink("");
       setTopic("");
       setDifficulty("");
       setDescription("");
-    } catch (err) {
-      if (err instanceof HttpError) {
-        setErrors({ general: err.message || "Failed to submit problem suggestion" });
-      } else {
-        setErrors({ general: "Network error. Please try again later." });
-      }
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -116,52 +110,28 @@ export function SuggestProblemForm() {
           )}
 
           {/* Problem Name */}
-          <div>
-            <label htmlFor="problem-name" className="block text-xs font-mono font-medium text-text-muted mb-1">
-              Problem Name
-            </label>
-            <input
-              id="problem-name"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Flight Discount or Convex Hull"
-              aria-required="true"
-              aria-describedby={errors.name ? "error-name" : undefined}
-              className={`w-full bg-bg-primary text-text-primary border ${
-                errors.name ? "border-accent-red" : "border-border-color"
-              } rounded px-3 py-2 text-sm focus:outline-none focus:border-accent-cyan`}
-            />
-            {errors.name && (
-              <p id="error-name" className="mt-1 text-xs text-accent-red font-medium">
-                {errors.name}
-              </p>
-            )}
-          </div>
+          <Input
+            label="Problem Name"
+            id="problem-name"
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="e.g. Flight Discount or Convex Hull"
+            error={errors.name}
+            aria-required="true"
+          />
 
           {/* Problem URL */}
-          <div>
-            <label htmlFor="problem-link" className="block text-xs font-mono font-medium text-text-muted mb-1">
-              Problem URL
-            </label>
-            <input
-              id="problem-link"
-              type="url"
-              value={link}
-              onChange={(e) => setLink(e.target.value)}
-              placeholder="https://codeforces.com/problemset/problem/..."
-              aria-required="true"
-              aria-describedby={errors.link ? "error-link" : undefined}
-              className={`w-full bg-bg-primary text-text-primary border ${
-                errors.link ? "border-accent-red" : "border-border-color"
-              } rounded px-3 py-2 text-sm focus:outline-none focus:border-accent-cyan`}
-            />
-            {errors.link && (
-              <p id="error-link" className="mt-1 text-xs text-accent-red font-medium">
-                {errors.link}
-              </p>
-            )}
-          </div>
+          <Input
+            label="Problem URL"
+            id="problem-link"
+            type="url"
+            value={link}
+            onChange={(e) => setLink(e.target.value)}
+            placeholder="https://codeforces.com/problemset/problem/..."
+            error={errors.link}
+            aria-required="true"
+          />
 
           {/* Topic & Difficulty */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -241,13 +211,13 @@ export function SuggestProblemForm() {
             )}
           </div>
 
-          <button
+          <Button
             type="submit"
-            disabled={submitting}
-            className="w-full bg-accent-cyan text-black font-semibold py-2.5 px-4 rounded text-sm hover:opacity-90 disabled:opacity-50 transition-opacity cursor-pointer font-mono"
+            isLoading={submitting}
+            className="w-full font-mono text-sm"
           >
-            {submitting ? "Submitting problem..." : "Submit Problem"}
-          </button>
+            Submit Problem
+          </Button>
         </form>
       )}
     </div>
