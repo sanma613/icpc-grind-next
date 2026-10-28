@@ -5,13 +5,13 @@ export function proxy(request: NextRequest) {
   const role = request.cookies.get("icpc_role")?.value;
   const pathname = request.nextUrl.pathname;
 
-  // 1. Rutas públicas de invitado (/login, /register): si ya está autenticado, redirigir al inicio
-  if (token && (pathname === "/login" || pathname === "/register")) {
+  // 1. Rutas públicas de invitado (/login, /registro): si ya está autenticado, redirigir al inicio
+  if (token && (pathname === "/login" || pathname === "/registro")) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
-  // 2. Ruta privada de usuario (/my-suggestions): requiere sesión activa
-  if (!token && pathname.startsWith("/my-suggestions")) {
+  // 2. Ruta privada de usuario (/mis-sugerencias): requiere sesión activa
+  if (!token && pathname.startsWith("/mis-sugerencias")) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
@@ -30,5 +30,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/my-suggestions/:path*", "/login", "/register"],
+  matcher: ["/admin/:path*", "/mis-sugerencias/:path*", "/login", "/registro"],
 };

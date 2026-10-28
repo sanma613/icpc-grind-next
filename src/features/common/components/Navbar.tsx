@@ -35,7 +35,7 @@ export function Navbar() {
               {/* Rutas según estado de autenticación (Rúbrica) */}
               {isAuthenticated && (
                 <li>
-                  <Link href="/my-suggestions" className="text-text-muted hover:text-text-primary transition-colors">
+                  <Link href="/mis-sugerencias" className="text-text-muted hover:text-text-primary transition-colors">
                     My Suggestions
                   </Link>
                 </li>
@@ -112,7 +112,7 @@ export function Navbar() {
             </li>
             {isAuthenticated && (
               <li>
-                <Link href="/my-suggestions" onClick={() => setMenuOpen(false)} className="block py-1 text-text-muted hover:text-text-primary">
+                <Link href="/mis-sugerencias" onClick={() => setMenuOpen(false)} className="block py-1 text-text-muted hover:text-text-primary">
                   My Suggestions
                 </Link>
               </li>
