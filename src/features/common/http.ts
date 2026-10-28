@@ -1,7 +1,14 @@
 import { API_BASE_URL, USE_MOCKS } from "./config";
-import { mockGetProblems, mockLogin, mockRegister } from "./mock/mockServer";
+import {
+  mockGetProblems,
+  mockLogin,
+  mockRegister,
+  mockCreateSuggestion,
+  mockGetMySuggestions,
+} from "./mock/mockServer";
 import { ProblemFilters } from "@/features/problems/domain/problem.types";
 import { LoginRequest, RegisterRequest } from "@/features/auth/domain/auth.types";
+import { CreateSuggestionRequest } from "@/features/suggestions/domain/suggestion.types";
 
 export interface RequestOptions extends RequestInit {
   params?: Record<string, string | number | undefined>;
@@ -15,6 +22,9 @@ export class HttpError extends Error {
 }
 
 export async function httpClient<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
+  const token = typeof window !== "undefined" ? localStorage.getItem("icpc_token") : null;
+  const tokenHeader = token ? `Bearer ${token}` : undefined;
+
   // Manejo por capa mock si está activado
   if (USE_MOCKS) {
     if (endpoint.startsWith("/api/problems") && (!options.method || options.method === "GET")) {
@@ -31,6 +41,17 @@ export async function httpClient<T>(endpoint: string, options: RequestOptions = 
       const body = options.body ? JSON.parse(options.body as string) : {};
       return mockRegister(body as RegisterRequest) as unknown as T;
     }
+
+    if (endpoint === "/api/suggestions" && options.method === "POST") {
+      const body = options.body ? JSON.parse(options.body as string) : {};
+      return mockCreateSuggestion(body as CreateSuggestionRequest, tokenHeader) as unknown as T;
+    }
+
+    if (endpoint === "/api/suggestions/mias" && (!options.method || options.method === "GET")) {
+      const page = Number(options.params?.page) || 1;
+      const limit = Number(options.params?.limit) || 10;
+      return mockGetMySuggestions(tokenHeader, page, limit) as unknown as T;
+    }
   }
 
   // Petición real por fetch al backend Express
@@ -42,8 +63,6 @@ export async function httpClient<T>(endpoint: string, options: RequestOptions = 
       }
     });
   }
-
-  const token = typeof window !== "undefined" ? localStorage.getItem("icpc_token") : null;
 
   const headers: HeadersInit = {
     "Content-Type": "application/json",

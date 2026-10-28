@@ -1,10 +1,12 @@
 import { initialProblems } from "@/features/problems/domain/problem.data";
 import { Problem, ProblemFilters, PaginatedResponse } from "@/features/problems/domain/problem.types";
 import { User, LoginRequest, RegisterRequest, AuthResponse } from "@/features/auth/domain/auth.types";
+import { Suggestion, CreateSuggestionRequest } from "@/features/suggestions/domain/suggestion.types";
 import { HttpError } from "../http";
 
 const PROBLEMS_KEY = "icpc_problems_mock";
 const USERS_KEY = "icpc_users_mock";
+const SUGGESTIONS_KEY = "icpc_suggestions_mock";
 
 interface StoredUser extends User {
   passwordHash: string;
@@ -25,6 +27,34 @@ const defaultUsers: StoredUser[] = [
     email: "user@icpc.org",
     role: "user",
     passwordHash: "User123*",
+  },
+];
+
+// Sugerencias iniciales de prueba
+const initialSuggestions: Suggestion[] = [
+  {
+    id: "sugg-1",
+    userId: "user-regular-1",
+    userName: "Santiago Competidor",
+    name: "Dijkstra? (Codeforces 20C)",
+    link: "https://codeforces.com/problemset/problem/20/C",
+    topic: "graphs",
+    difficulty: "easy",
+    description: "Classic shortest path retrieval using priority queue Dijkstra.",
+    status: "approved",
+    createdAt: "2026-10-25T14:30:00Z",
+  },
+  {
+    id: "sugg-2",
+    userId: "user-regular-1",
+    userName: "Santiago Competidor",
+    name: "Intersection of Two Segments",
+    link: "https://cses.fi/problemset/task/2190",
+    topic: "geometry",
+    difficulty: "medium",
+    description: "Check whether two line segments in 2D plane intersect using cross products.",
+    status: "pending",
+    createdAt: "2026-10-26T10:15:00Z",
   },
 ];
 
@@ -55,11 +85,9 @@ export function mockLogin(req: LoginRequest): AuthResponse {
   );
 
   if (!found) {
-    // 401 genérico: no revela si falló el email o la contraseña (rúbrica explícita)
     throw new HttpError(401, "Invalid email or password");
   }
 
-  // Generar token JWT simulado (base64 payload con id y role)
   const payload = btoa(JSON.stringify({ sub: found.id, role: found.role, exp: Date.now() + 7 * 86400000 }));
   const token = `mock-jwt.${payload}.signature`;
 
@@ -79,7 +107,6 @@ export function mockRegister(req: RegisterRequest): AuthResponse {
   const exists = users.some((u) => u.email.toLowerCase() === req.email.toLowerCase());
 
   if (exists) {
-    // 409 Conflict si el email ya existe
     throw new HttpError(409, "An account with this email address already exists", {
       errors: { email: "Email is already registered" },
     });
@@ -145,6 +172,106 @@ export function mockGetProblems(filters: ProblemFilters = {}): PaginatedResponse
   const totalPages = Math.max(1, Math.ceil(total / limit));
   const start = (page - 1) * limit;
   const data = filtered.slice(start, start + limit);
+
+  return {
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages,
+    },
+    data,
+  };
+}
+
+// -------------------------------------------------------------
+// Capa Mock para Sugerencias (Interacción)
+// -------------------------------------------------------------
+function getStoredSuggestions(): Suggestion[] {
+  if (typeof window === "undefined") return initialSuggestions;
+  const raw = localStorage.getItem(SUGGESTIONS_KEY);
+  if (!raw) {
+    localStorage.setItem(SUGGESTIONS_KEY, JSON.stringify(initialSuggestions));
+    return initialSuggestions;
+  }
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return initialSuggestions;
+  }
+}
+
+function saveSuggestions(list: Suggestion[]) {
+  if (typeof window !== "undefined") {
+    localStorage.setItem(SUGGESTIONS_KEY, JSON.stringify(list));
+  }
+}
+
+function getCurrentUserFromToken(tokenHeader?: string): User | null {
+  if (!tokenHeader) return null;
+  const token = tokenHeader.replace("Bearer ", "");
+  try {
+    const parts = token.split(".");
+    if (parts.length < 2) return null;
+    const payload = JSON.parse(atob(parts[1]));
+    const users = getStoredUsers();
+    return users.find((u) => u.id === payload.sub) || null;
+  } catch {
+    return null;
+  }
+}
+
+export function mockCreateSuggestion(
+  req: CreateSuggestionRequest,
+  tokenHeader?: string
+): Suggestion {
+  const user = getCurrentUserFromToken(tokenHeader);
+  if (!user) {
+    throw new HttpError(401, "Authentication required to submit suggestions");
+  }
+
+  // Validación de campos
+  if (!req.name?.trim()) throw new HttpError(400, "Problem name is required");
+  if (!req.link?.trim()) throw new HttpError(400, "Problem URL is required");
+  if (!req.description || req.description.length < 20) {
+    throw new HttpError(400, "Description must be at least 20 characters");
+  }
+
+  const suggestions = getStoredSuggestions();
+  const newSuggestion: Suggestion = {
+    id: `sugg-${Date.now()}`,
+    userId: user.id, // Sale estrictamente del token (Rúbrica)
+    userName: user.name,
+    name: req.name,
+    link: req.link,
+    topic: req.topic,
+    difficulty: req.difficulty,
+    description: req.description,
+    status: "pending",
+    createdAt: new Date().toISOString(),
+  };
+
+  suggestions.unshift(newSuggestion);
+  saveSuggestions(suggestions);
+
+  return newSuggestion;
+}
+
+export function mockGetMySuggestions(
+  tokenHeader?: string,
+  page: number = 1,
+  limit: number = 10
+): PaginatedResponse<Suggestion> {
+  const user = getCurrentUserFromToken(tokenHeader);
+  if (!user) {
+    throw new HttpError(401, "Authentication required");
+  }
+
+  const suggestions = getStoredSuggestions().filter((s) => s.userId === user.id);
+  const total = suggestions.length;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  const start = (page - 1) * limit;
+  const data = suggestions.slice(start, start + limit);
 
   return {
     pagination: {
