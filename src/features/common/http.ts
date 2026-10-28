@@ -21,36 +21,55 @@ export class HttpError extends Error {
   }
 }
 
+function handleUnauthorized(): never {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem("icpc_token");
+    localStorage.removeItem("icpc_user");
+    document.cookie = "icpc_token=; path=/; max-age=0";
+    document.cookie = "icpc_role=; path=/; max-age=0";
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+    window.location.assign("/login");
+  }
+  throw new HttpError(401, "Session expired or unauthorized");
+}
+
 export async function httpClient<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
   const token = typeof window !== "undefined" ? localStorage.getItem("icpc_token") : null;
   const tokenHeader = token ? `Bearer ${token}` : undefined;
 
   // Manejo por capa mock si está activado
   if (USE_MOCKS) {
-    if (endpoint.startsWith("/api/problems") && (!options.method || options.method === "GET")) {
-      const filters = (options.params || {}) as ProblemFilters;
-      return mockGetProblems(filters) as unknown as T;
-    }
+    try {
+      if (endpoint.startsWith("/api/problems") && (!options.method || options.method === "GET")) {
+        const filters = (options.params || {}) as ProblemFilters;
+        return mockGetProblems(filters) as unknown as T;
+      }
 
-    if (endpoint === "/api/auth/login" && options.method === "POST") {
-      const body = options.body ? JSON.parse(options.body as string) : {};
-      return mockLogin(body as LoginRequest) as unknown as T;
-    }
+      if (endpoint === "/api/auth/login" && options.method === "POST") {
+        const body = options.body ? JSON.parse(options.body as string) : {};
+        return mockLogin(body as LoginRequest) as unknown as T;
+      }
 
-    if (endpoint === "/api/auth/register" && options.method === "POST") {
-      const body = options.body ? JSON.parse(options.body as string) : {};
-      return mockRegister(body as RegisterRequest) as unknown as T;
-    }
+      if (endpoint === "/api/auth/register" && options.method === "POST") {
+        const body = options.body ? JSON.parse(options.body as string) : {};
+        return mockRegister(body as RegisterRequest) as unknown as T;
+      }
 
-    if (endpoint === "/api/suggestions" && options.method === "POST") {
-      const body = options.body ? JSON.parse(options.body as string) : {};
-      return mockCreateSuggestion(body as CreateSuggestionRequest, tokenHeader) as unknown as T;
-    }
+      if (endpoint === "/api/suggestions" && options.method === "POST") {
+        const body = options.body ? JSON.parse(options.body as string) : {};
+        return mockCreateSuggestion(body as CreateSuggestionRequest, tokenHeader) as unknown as T;
+      }
 
-    if (endpoint === "/api/suggestions/mias" && (!options.method || options.method === "GET")) {
-      const page = Number(options.params?.page) || 1;
-      const limit = Number(options.params?.limit) || 10;
-      return mockGetMySuggestions(tokenHeader, page, limit) as unknown as T;
+      if (endpoint === "/api/suggestions/mias" && (!options.method || options.method === "GET")) {
+        const page = Number(options.params?.page) || 1;
+        const limit = Number(options.params?.limit) || 10;
+        return mockGetMySuggestions(tokenHeader, page, limit) as unknown as T;
+      }
+    } catch (err) {
+      if (err instanceof HttpError && err.status === 401 && endpoint !== "/api/auth/login") {
+        handleUnauthorized();
+      }
+      throw err;
     }
   }
 
@@ -78,16 +97,8 @@ export async function httpClient<T>(endpoint: string, options: RequestOptions = 
     headers,
   });
 
-  if (res.status === 401) {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("icpc_token");
-      localStorage.removeItem("icpc_user");
-      document.cookie = "icpc_token=; path=/; max-age=0";
-      document.cookie = "icpc_role=; path=/; max-age=0";
-      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-      window.location.assign("/login");
-    }
-    throw new HttpError(401, "Session expired or unauthorized");
+  if (res.status === 401 && endpoint !== "/api/auth/login") {
+    handleUnauthorized();
   }
 
   if (!res.ok) {

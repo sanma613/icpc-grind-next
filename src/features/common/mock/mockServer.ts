@@ -85,10 +85,12 @@ export function mockLogin(req: LoginRequest): AuthResponse {
   );
 
   if (!found) {
+    // 401 genérico: no revela si falló el email o la contraseña (rúbrica explícita)
     throw new HttpError(401, "Invalid email or password");
   }
 
-  const payload = btoa(JSON.stringify({ sub: found.id, role: found.role, exp: Date.now() + 7 * 86400000 }));
+  // Generar token JWT simulado (base64 payload con sub, role y exp)
+  const payload = btoa(JSON.stringify({ sub: found.id, role: found.role, exp: Math.floor(Date.now() / 1000) + 7 * 86400 }));
   const token = `mock-jwt.${payload}.signature`;
 
   return {
@@ -107,6 +109,7 @@ export function mockRegister(req: RegisterRequest): AuthResponse {
   const exists = users.some((u) => u.email.toLowerCase() === req.email.toLowerCase());
 
   if (exists) {
+    // 409 Conflict si el email ya existe (rúbrica explícita)
     throw new HttpError(409, "An account with this email address already exists", {
       errors: { email: "Email is already registered" },
     });
@@ -230,11 +233,20 @@ export function mockCreateSuggestion(
     throw new HttpError(401, "Authentication required to submit suggestions");
   }
 
-  // Validación de campos
-  if (!req.name?.trim()) throw new HttpError(400, "Problem name is required");
-  if (!req.link?.trim()) throw new HttpError(400, "Problem URL is required");
-  if (!req.description || req.description.length < 20) {
-    throw new HttpError(400, "Description must be at least 20 characters");
+  // Validación de campos con estructura errors por campo (Rúbrica)
+  const fieldErrors: Record<string, string> = {};
+  if (!req.name?.trim()) fieldErrors.name = "Problem name is required";
+  if (!req.link?.trim()) {
+    fieldErrors.link = "Problem URL is required";
+  } else if (!req.link.startsWith("http://") && !req.link.startsWith("https://")) {
+    fieldErrors.link = "URL must start with http:// or https://";
+  }
+  if (!req.description || req.description.trim().length < 20) {
+    fieldErrors.description = "Description must be at least 20 characters";
+  }
+
+  if (Object.keys(fieldErrors).length > 0) {
+    throw new HttpError(400, "Validation failed", { errors: fieldErrors });
   }
 
   const suggestions = getStoredSuggestions();
