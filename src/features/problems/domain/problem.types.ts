@@ -33,3 +33,26 @@ export interface PaginatedResponse<T> {
   pagination: PaginationMeta;
   data: T[];
 }
+
+export interface CreateProblemRequest {
+  name: string;
+  topic: Topic;
+  difficulty: Difficulty;
+  source: PlatformSource | string;
+  year: number;
+  link: string;
+  description: string;
+}
+
+export type UpdateProblemRequest = Partial<CreateProblemRequest>;
+
+export interface ProblemFieldErrors {
+  name?: string;
+  topic?: string;
+  difficulty?: string;
+  source?: string;
+  year?: string;
+  link?: string;
+  description?: string;
+  general?: string;
+}
