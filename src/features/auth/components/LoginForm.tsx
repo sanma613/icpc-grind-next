@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { HttpError } from "@/features/common/http";
+import { Input } from "@/features/common/components/Input";
+import { Button } from "@/features/common/components/Button";
 
 export function LoginForm() {
   const { login } = useAuth();
@@ -68,59 +70,35 @@ export function LoginForm() {
       )}
 
       <form onSubmit={handleSubmit} noValidate className="space-y-4">
-        <div>
-          <label htmlFor="login-email" className="block text-xs font-mono font-medium text-text-muted mb-1">
-            Email address
-          </label>
-          <input
-            id="login-email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="competitor@icpc.org"
-            aria-required="true"
-            aria-describedby={errors.email ? "error-login-email" : undefined}
-            className={`w-full bg-bg-primary text-text-primary border ${
-              errors.email ? "border-accent-red" : "border-border-color"
-            } rounded px-3 py-2 text-sm focus:outline-none focus:border-accent-cyan`}
-          />
-          {errors.email && (
-            <p id="error-login-email" className="mt-1 text-xs text-accent-red font-medium">
-              {errors.email}
-            </p>
-          )}
-        </div>
+        <Input
+          label="Email address"
+          id="login-email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="competitor@icpc.org"
+          error={errors.email}
+          aria-required="true"
+        />
 
-        <div>
-          <label htmlFor="login-password" className="block text-xs font-mono font-medium text-text-muted mb-1">
-            Password
-          </label>
-          <input
-            id="login-password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            aria-required="true"
-            aria-describedby={errors.password ? "error-login-password" : undefined}
-            className={`w-full bg-bg-primary text-text-primary border ${
-              errors.password ? "border-accent-red" : "border-border-color"
-            } rounded px-3 py-2 text-sm focus:outline-none focus:border-accent-cyan`}
-          />
-          {errors.password && (
-            <p id="error-login-password" className="mt-1 text-xs text-accent-red font-medium">
-              {errors.password}
-            </p>
-          )}
-        </div>
+        <Input
+          label="Password"
+          id="login-password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="••••••••"
+          error={errors.password}
+          aria-required="true"
+        />
 
-        <button
+        <Button
           type="submit"
-          disabled={loading}
-          className="w-full bg-accent-cyan text-black font-semibold py-2 px-4 rounded text-sm hover:opacity-90 disabled:opacity-50 transition-opacity cursor-pointer font-mono"
+          isLoading={loading}
+          className="w-full font-mono text-sm"
         >
-          {loading ? "Authenticating..." : "Sign In"}
-        </button>
+          Sign In
+        </Button>
       </form>
 
       {/* Credenciales de prueba directas para facilitar la revisión del evaluador */}

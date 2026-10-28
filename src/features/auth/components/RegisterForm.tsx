@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useState } from "react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { HttpError } from "@/features/common/http";
+import { Input } from "@/features/common/components/Input";
+import { Button } from "@/features/common/components/Button";
 
 export function RegisterForm() {
   const { register } = useAuth();
@@ -75,82 +77,46 @@ export function RegisterForm() {
       )}
 
       <form onSubmit={handleSubmit} noValidate className="space-y-4">
-        <div>
-          <label htmlFor="reg-name" className="block text-xs font-mono font-medium text-text-muted mb-1">
-            Full name
-          </label>
-          <input
-            id="reg-name"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Ada Lovelace"
-            aria-required="true"
-            aria-describedby={errors.name ? "error-reg-name" : undefined}
-            className={`w-full bg-bg-primary text-text-primary border ${
-              errors.name ? "border-accent-red" : "border-border-color"
-            } rounded px-3 py-2 text-sm focus:outline-none focus:border-accent-cyan`}
-          />
-          {errors.name && (
-            <p id="error-reg-name" className="mt-1 text-xs text-accent-red font-medium">
-              {errors.name}
-            </p>
-          )}
-        </div>
+        <Input
+          label="Full name"
+          id="reg-name"
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Ada Lovelace"
+          error={errors.name}
+          aria-required="true"
+        />
 
-        <div>
-          <label htmlFor="reg-email" className="block text-xs font-mono font-medium text-text-muted mb-1">
-            Email address
-          </label>
-          <input
-            id="reg-email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="competitor@icpc.org"
-            aria-required="true"
-            aria-describedby={errors.email ? "error-reg-email" : undefined}
-            className={`w-full bg-bg-primary text-text-primary border ${
-              errors.email ? "border-accent-red" : "border-border-color"
-            } rounded px-3 py-2 text-sm focus:outline-none focus:border-accent-cyan`}
-          />
-          {errors.email && (
-            <p id="error-reg-email" className="mt-1 text-xs text-accent-red font-medium">
-              {errors.email}
-            </p>
-          )}
-        </div>
+        <Input
+          label="Email address"
+          id="reg-email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="competitor@icpc.org"
+          error={errors.email}
+          aria-required="true"
+        />
 
-        <div>
-          <label htmlFor="reg-password" className="block text-xs font-mono font-medium text-text-muted mb-1">
-            Password (min 6 characters)
-          </label>
-          <input
-            id="reg-password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            aria-required="true"
-            aria-describedby={errors.password ? "error-reg-password" : undefined}
-            className={`w-full bg-bg-primary text-text-primary border ${
-              errors.password ? "border-accent-red" : "border-border-color"
-            } rounded px-3 py-2 text-sm focus:outline-none focus:border-accent-cyan`}
-          />
-          {errors.password && (
-            <p id="error-reg-password" className="mt-1 text-xs text-accent-red font-medium">
-              {errors.password}
-            </p>
-          )}
-        </div>
+        <Input
+          label="Password (min 6 characters)"
+          id="reg-password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="••••••••"
+          error={errors.password}
+          aria-required="true"
+        />
 
-        <button
+        <Button
           type="submit"
-          disabled={loading}
-          className="w-full bg-accent-cyan text-black font-semibold py-2 px-4 rounded text-sm hover:opacity-90 disabled:opacity-50 transition-opacity cursor-pointer font-mono"
+          isLoading={loading}
+          className="w-full font-mono text-sm"
         >
-          {loading ? "Creating account..." : "Sign Up"}
-        </button>
+          Sign Up
+        </Button>
       </form>
 
       <div className="mt-6 text-center text-xs text-text-muted">
