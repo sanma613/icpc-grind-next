@@ -1,4 +1,5 @@
 import React from "react";
+import { Button } from "./Button";
 
 export interface StatusMessageProps {
   type?: "info" | "success" | "warning" | "error";
@@ -31,12 +32,14 @@ export const StatusMessage: React.FC<StatusMessageProps> = ({
       {children}
       {onRetry && (
         <div className="mt-4">
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={onRetry}
-            className="px-3 py-1 text-xs border border-current rounded hover:bg-white/10 transition-colors cursor-pointer"
+            className="text-xs font-mono"
           >
             Retry
-          </button>
+          </Button>
         </div>
       )}
     </div>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { ThemeToggle } from "./ThemeToggle";
+import { Button } from "./Button";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 
 export function Navbar() {
@@ -54,13 +55,15 @@ export function Navbar() {
                   <span className="font-mono text-xs text-text-muted">
                     {user?.name}
                   </span>
-                  <button
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={logout}
                     type="button"
-                    className="text-xs text-accent-red hover:underline font-mono cursor-pointer"
+                    className="text-xs text-accent-red border-accent-red/30 hover:bg-accent-red/10 font-mono py-0.5 px-2"
                   >
                     Logout
-                  </button>
+                  </Button>
                 </li>
               ) : (
                 <li>
@@ -127,15 +130,18 @@ export function Navbar() {
             {isAuthenticated ? (
               <li className="pt-2 border-t border-border-color flex justify-between items-center">
                 <span className="font-mono text-xs text-text-muted">{user?.name}</span>
-                <button
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => {
                     setMenuOpen(false);
                     logout();
                   }}
-                  className="text-xs text-accent-red font-mono cursor-pointer"
+                  type="button"
+                  className="text-xs text-accent-red border-accent-red/30 hover:bg-accent-red/10 font-mono py-0.5 px-2"
                 >
                   Logout
-                </button>
+                </Button>
               </li>
             ) : (
               <li>

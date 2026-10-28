@@ -1,4 +1,4 @@
-"use client";
+import { Input } from "@/features/common/components/Input";
 
 interface ProblemFiltersProps {
   topic: string;
@@ -18,17 +18,14 @@ export function ProblemFiltersBar({
   return (
     <div className="flex flex-wrap items-center gap-4 mb-8 bg-bg-secondary p-4 rounded-lg border border-border-color">
       {/* Search Input */}
-      <div className="flex items-center gap-2 flex-1 min-w-50">
-        <label htmlFor="filter-q" className="text-xs text-text-muted font-mono">
-          Search:
-        </label>
-        <input
+      <div className="flex-1 min-w-50">
+        <Input
           id="filter-q"
           type="text"
           value={q}
           onChange={(e) => onChange({ q: e.target.value })}
           placeholder="Filter by keyword..."
-          className="w-full bg-bg-primary text-text-primary border border-border-color rounded px-3 py-1.5 text-sm focus:outline-none focus:border-accent-cyan"
+          className="bg-bg-primary py-1.5 text-sm"
         />
       </div>
 
