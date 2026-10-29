@@ -1,14 +1,24 @@
 import { API_BASE_URL, USE_MOCKS } from "./config";
 import {
   mockGetProblems,
+  mockGetProblemById,
+  mockCreateProblem,
+  mockUpdateProblem,
+  mockDeleteProblem,
   mockLogin,
   mockRegister,
   mockCreateSuggestion,
   mockGetMySuggestions,
+  mockGetAllSuggestions,
+  mockUpdateSuggestionStatus,
 } from "./mock/mockServer";
-import { ProblemFilters } from "@/features/problems/domain/problem.types";
+import {
+  ProblemFilters,
+  CreateProblemRequest,
+  UpdateProblemRequest,
+} from "@/features/problems/domain/problem.types";
 import { LoginRequest, RegisterRequest } from "@/features/auth/domain/auth.types";
-import { CreateSuggestionRequest } from "@/features/suggestions/domain/suggestion.types";
+import { CreateSuggestionRequest, Suggestion } from "@/features/suggestions/domain/suggestion.types";
 
 export interface RequestOptions extends RequestInit {
   params?: Record<string, string | number | undefined>;
@@ -40,11 +50,39 @@ export async function httpClient<T>(endpoint: string, options: RequestOptions = 
   // Manejo por capa mock si está activado
   if (USE_MOCKS) {
     try {
-      if (endpoint.startsWith("/api/problems") && (!options.method || options.method === "GET")) {
+      // 1. GET /api/problems (catálogo paginado con filtros)
+      if (endpoint === "/api/problems" && (!options.method || options.method === "GET")) {
         const filters = (options.params || {}) as ProblemFilters;
         return mockGetProblems(filters) as unknown as T;
       }
 
+      // 2. GET /api/problems/:id
+      if (endpoint.startsWith("/api/problems/") && (!options.method || options.method === "GET")) {
+        const id = Number(endpoint.split("/")[3]);
+        return mockGetProblemById(id) as unknown as T;
+      }
+
+      // 3. POST /api/problems (Crear problema - solo admin)
+      if (endpoint === "/api/problems" && options.method === "POST") {
+        const body = options.body ? JSON.parse(options.body as string) : {};
+        return mockCreateProblem(body as CreateProblemRequest, tokenHeader) as unknown as T;
+      }
+
+      // 4. PUT /api/problems/:id (Editar problema - solo admin)
+      if (endpoint.startsWith("/api/problems/") && options.method === "PUT") {
+        const id = Number(endpoint.split("/")[3]);
+        const body = options.body ? JSON.parse(options.body as string) : {};
+        return mockUpdateProblem(id, body as UpdateProblemRequest, tokenHeader) as unknown as T;
+      }
+
+      // 5. DELETE /api/problems/:id (Eliminar problema - solo admin)
+      if (endpoint.startsWith("/api/problems/") && options.method === "DELETE") {
+        const id = Number(endpoint.split("/")[3]);
+        mockDeleteProblem(id, tokenHeader);
+        return null as unknown as T;
+      }
+
+      // 6. Auth
       if (endpoint === "/api/auth/login" && options.method === "POST") {
         const body = options.body ? JSON.parse(options.body as string) : {};
         return mockLogin(body as LoginRequest) as unknown as T;
@@ -55,6 +93,7 @@ export async function httpClient<T>(endpoint: string, options: RequestOptions = 
         return mockRegister(body as RegisterRequest) as unknown as T;
       }
 
+      // 7. Suggestions
       if (endpoint === "/api/suggestions" && options.method === "POST") {
         const body = options.body ? JSON.parse(options.body as string) : {};
         return mockCreateSuggestion(body as CreateSuggestionRequest, tokenHeader) as unknown as T;
@@ -64,6 +103,22 @@ export async function httpClient<T>(endpoint: string, options: RequestOptions = 
         const page = Number(options.params?.page) || 1;
         const limit = Number(options.params?.limit) || 10;
         return mockGetMySuggestions(tokenHeader, page, limit) as unknown as T;
+      }
+
+      // 8. GET /api/suggestions (Listar todas las sugerencias - solo admin)
+      if (endpoint === "/api/suggestions" && (!options.method || options.method === "GET")) {
+        const page = Number(options.params?.page) || 1;
+        const limit = Number(options.params?.limit) || 10;
+        const status = options.params?.status as string | undefined;
+        return mockGetAllSuggestions(tokenHeader, page, limit, status) as unknown as T;
+      }
+
+      // 9. PATCH /api/suggestions/:id/status (Moderar sugerencia - solo admin)
+      if (endpoint.startsWith("/api/suggestions/") && endpoint.endsWith("/status") && options.method === "PATCH") {
+        const parts = endpoint.split("/");
+        const id = parts[3];
+        const body = options.body ? JSON.parse(options.body as string) : {};
+        return mockUpdateSuggestionStatus(id, body.status as Suggestion["status"], tokenHeader) as unknown as T;
       }
     } catch (err) {
       if (err instanceof HttpError && err.status === 401 && endpoint !== "/api/auth/login") {

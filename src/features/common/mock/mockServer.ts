@@ -1,5 +1,11 @@
 import { initialProblems } from "@/features/problems/domain/problem.data";
-import { Problem, ProblemFilters, PaginatedResponse } from "@/features/problems/domain/problem.types";
+import {
+  Problem,
+  ProblemFilters,
+  PaginatedResponse,
+  CreateProblemRequest,
+  UpdateProblemRequest,
+} from "@/features/problems/domain/problem.types";
 import { User, LoginRequest, RegisterRequest, AuthResponse } from "@/features/auth/domain/auth.types";
 import { Suggestion, CreateSuggestionRequest } from "@/features/suggestions/domain/suggestion.types";
 import { HttpError } from "../http";
@@ -154,6 +160,12 @@ function getStoredProblems(): Problem[] {
   }
 }
 
+function saveProblems(problems: Problem[]) {
+  if (typeof window !== "undefined") {
+    localStorage.setItem(PROBLEMS_KEY, JSON.stringify(problems));
+  }
+}
+
 export function mockGetProblems(filters: ProblemFilters = {}): PaginatedResponse<Problem> {
   const all = getStoredProblems();
   const { topic, difficulty, source, q, page = 1, limit = 6 } = filters;
@@ -186,6 +198,101 @@ export function mockGetProblems(filters: ProblemFilters = {}): PaginatedResponse
     data,
   };
 }
+
+
+function requireAdminUser(tokenHeader?: string): User {
+  const user = getCurrentUserFromToken(tokenHeader);
+  if (!user) {
+    throw new HttpError(401, "Authentication required");
+  }
+  if (user.role !== "admin") {
+    throw new HttpError(403, "Forbidden: Admin role required");
+  }
+  return user;
+}
+
+export function mockCreateProblem(
+  req: CreateProblemRequest,
+  tokenHeader?: string
+): Problem {
+  requireAdminUser(tokenHeader);
+
+  const errors: Record<string, string> = {};
+  if (!req.name?.trim()) errors.name = "Problem name is required";
+  if (!req.link?.trim()) errors.link = "Problem URL is required";
+  if (!req.description?.trim()) errors.description = "Editorial summary is required";
+  if (!req.year || req.year < 1970 || req.year > 2030) errors.year = "Valid contest year is required";
+
+  if (Object.keys(errors).length > 0) {
+    throw new HttpError(400, "Validation failed", { errors });
+  }
+
+  const problems = getStoredProblems();
+  const nextId = problems.length > 0 ? Math.max(...problems.map((p) => p.id)) + 1 : 1;
+
+  const newProblem: Problem = {
+    id: nextId,
+    name: req.name.trim(),
+    topic: req.topic,
+    difficulty: req.difficulty,
+    source: req.source || "Community",
+    year: Number(req.year),
+    link: req.link.trim(),
+    description: req.description.trim(),
+  };
+
+  problems.unshift(newProblem);
+  saveProblems(problems);
+  return newProblem;
+}
+
+export function mockUpdateProblem(
+  id: number,
+  req: UpdateProblemRequest,
+  tokenHeader?: string
+): Problem {
+  requireAdminUser(tokenHeader);
+
+  const problems = getStoredProblems();
+  const index = problems.findIndex((p) => p.id === id);
+  if (index === -1) {
+    throw new HttpError(404, `Problem with id ${id} not found`);
+  }
+
+  const existing = problems[index];
+  const updated: Problem = {
+    ...existing,
+    ...req,
+    id: existing.id,
+  };
+
+  problems[index] = updated;
+  saveProblems(problems);
+  return updated;
+}
+
+export function mockDeleteProblem(id: number, tokenHeader?: string): void {
+  requireAdminUser(tokenHeader);
+
+  const problems = getStoredProblems();
+  const index = problems.findIndex((p) => p.id === id);
+  if (index === -1) {
+    throw new HttpError(404, `Problem with id ${id} not found`);
+  }
+
+  problems.splice(index, 1);
+  saveProblems(problems);
+}
+
+export function mockGetProblemById(id: number): Problem {
+  const problems = getStoredProblems();
+  const problem = problems.find((p) => p.id === id);
+  if (!problem) {
+    throw new HttpError(404, `Problem with id ${id} not found`);
+  }
+  return problem;
+}
+
 
 // -------------------------------------------------------------
 // Capa Mock para Sugerencias (Interacción)
@@ -295,3 +402,73 @@ export function mockGetMySuggestions(
     data,
   };
 }
+
+export function mockGetAllSuggestions(
+  tokenHeader?: string,
+  page: number = 1,
+  limit: number = 10,
+  status?: string
+): PaginatedResponse<Suggestion> {
+  requireAdminUser(tokenHeader);
+
+  let suggestions = getStoredSuggestions();
+  if (status && status !== "all") {
+    suggestions = suggestions.filter((s) => s.status === status);
+  }
+
+  const total = suggestions.length;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  const start = (page - 1) * limit;
+  const data = suggestions.slice(start, start + limit);
+
+  return {
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages,
+    },
+    data,
+  };
+}
+
+export function mockUpdateSuggestionStatus(
+  id: string,
+  status: Suggestion["status"],
+  tokenHeader?: string
+): Suggestion {
+  requireAdminUser(tokenHeader);
+
+  const suggestions = getStoredSuggestions();
+  const index = suggestions.findIndex((s) => s.id === id);
+  if (index === -1) {
+    throw new HttpError(404, `Suggestion ${id} not found`);
+  }
+
+  const current = suggestions[index];
+  current.status = status;
+
+  // Si se aprueba, opcionalmente se incorpora al catálogo si no está ya
+  if (status === "approved" && !current.problemId) {
+    const problems = getStoredProblems();
+    const nextId = problems.length > 0 ? Math.max(...problems.map((p) => p.id)) + 1 : 1;
+    const newProblem: Problem = {
+      id: nextId,
+      name: current.name,
+      topic: current.topic,
+      difficulty: current.difficulty,
+      source: "Community",
+      year: new Date().getFullYear(),
+      link: current.link,
+      description: current.description,
+    };
+    problems.unshift(newProblem);
+    saveProblems(problems);
+    current.problemId = nextId;
+  }
+
+  suggestions[index] = current;
+  saveSuggestions(suggestions);
+  return current;
+}
+
