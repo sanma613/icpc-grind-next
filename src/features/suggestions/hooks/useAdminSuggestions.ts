@@ -16,7 +16,7 @@ export function useAdminSuggestions(initialPage: number = 1) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("pending");
   const [, startTransition] = useTransition();
 
   const fetchSuggestions = useCallback(

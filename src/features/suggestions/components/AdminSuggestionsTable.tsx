@@ -75,10 +75,10 @@ export function AdminSuggestionsTable() {
             }}
             className="bg-card-bg border border-border-color rounded px-3 py-1.5 text-xs font-mono text-text-primary focus:outline-none focus:border-accent-cyan"
           >
-            <option value="all">All Submissions</option>
-            <option value="pending">Pending</option>
+            <option value="pending">Pending Review (Inbox)</option>
             <option value="approved">Approved</option>
             <option value="rejected">Rejected</option>
+            <option value="all">All Submissions</option>
           </select>
         </div>
       </div>
@@ -170,29 +170,33 @@ export function AdminSuggestionsTable() {
                         </span>
                       </td>
                       <td className="py-3 px-4 text-right space-x-2">
-                        {sugg.status !== "approved" && (
-                          <Button
-                            type="button"
-                            variant="primary"
-                            size="sm"
-                            disabled={actionLoading}
-                            onClick={() => handleStatusChange(sugg.id, "approved")}
-                            className="text-xs py-1 px-2.5 bg-accent-green hover:bg-accent-green/90 text-black"
-                          >
-                            Approve
-                          </Button>
-                        )}
-                        {sugg.status !== "rejected" && (
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            size="sm"
-                            disabled={actionLoading}
-                            onClick={() => handleStatusChange(sugg.id, "rejected")}
-                            className="text-xs py-1 px-2.5 text-accent-red border-accent-red/30 hover:bg-accent-red/10"
-                          >
-                            Reject
-                          </Button>
+                        {sugg.status === "pending" ? (
+                          <>
+                            <Button
+                              type="button"
+                              variant="primary"
+                              size="sm"
+                              disabled={actionLoading}
+                              onClick={() => handleStatusChange(sugg.id, "approved")}
+                              className="text-xs py-1 px-2.5 bg-accent-green hover:bg-accent-green/90 text-black font-semibold"
+                            >
+                              Approve
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              size="sm"
+                              disabled={actionLoading}
+                              onClick={() => handleStatusChange(sugg.id, "rejected")}
+                              className="text-xs py-1 px-2.5 text-accent-red border-accent-red/30 hover:bg-accent-red/10"
+                            >
+                              Reject
+                            </Button>
+                          </>
+                        ) : (
+                          <span className="text-xs text-text-muted font-mono italic">
+                            {sugg.status === "approved" ? "✓ In Catalog" : "Archived"}
+                          </span>
                         )}
                       </td>
                     </tr>
