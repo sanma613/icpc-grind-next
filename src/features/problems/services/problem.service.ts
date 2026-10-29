@@ -9,9 +9,15 @@ import {
 
 export const problemService = {
   getProblems: (filters: ProblemFilters = {}): Promise<PaginatedResponse<Problem>> => {
+    const cleanParams: Record<string, string | number | undefined> = {};
+    Object.entries(filters).forEach(([key, val]) => {
+      if (val !== undefined && val !== "" && val !== "all") {
+        cleanParams[key] = val;
+      }
+    });
     return httpClient<PaginatedResponse<Problem>>("/api/problems", {
       method: "GET",
-      params: filters as Record<string, string | number | undefined>,
+      params: cleanParams,
     });
   },
 
