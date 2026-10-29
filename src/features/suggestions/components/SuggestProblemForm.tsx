@@ -10,7 +10,7 @@ import { Input } from "@/features/common/components/Input";
 import Link from "next/link";
 
 export function SuggestProblemForm() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isAdmin } = useAuth();
   const { createSuggestion, submitting, errors: apiErrors } = useCreateSuggestion();
 
   const [name, setName] = useState("");
@@ -93,6 +93,21 @@ export function SuggestProblemForm() {
             className="inline-block bg-accent-cyan text-black text-xs font-semibold px-4 py-2 rounded font-mono hover:opacity-90 transition-opacity"
           >
             Sign in to suggest
+          </Link>
+        </div>
+      ) : isAdmin ? (
+        <div className="p-6 border border-accent-cyan/30 rounded-lg text-center bg-accent-cyan/5">
+          <p className="text-text-primary font-semibold mb-2 font-mono text-sm">
+            🛡️ Administrator Mode
+          </p>
+          <p className="text-xs text-text-muted mb-4 max-w-md mx-auto">
+            As an administrator, you do not need to submit suggestions for review. You can create, edit, and publish challenges directly to the catalog from your management panel.
+          </p>
+          <Link
+            href="/admin"
+            className="inline-block bg-accent-cyan text-black text-xs font-semibold px-4 py-2 rounded font-mono hover:opacity-90 transition-opacity"
+          >
+            Manage Catalog in Admin Panel →
           </Link>
         </div>
       ) : (

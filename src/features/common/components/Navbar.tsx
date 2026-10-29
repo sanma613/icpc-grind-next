@@ -27,14 +27,17 @@ export function Navbar() {
                   Problemset
                 </Link>
               </li>
-              <li>
-                <Link href="/#submit" className="text-text-muted hover:text-text-primary transition-colors">
-                  Submit Problem
-                </Link>
-              </li>
 
-              {/* Rutas según estado de autenticación (Rúbrica) */}
-              {isAuthenticated && (
+              {/* Si no es admin, mostrar enlaces de sugerencia y mis sugerencias */}
+              {!isAdmin && (
+                <li>
+                  <Link href="/#submit" className="text-text-muted hover:text-text-primary transition-colors">
+                    Submit Problem
+                  </Link>
+                </li>
+              )}
+
+              {isAuthenticated && !isAdmin && (
                 <li>
                   <Link href="/mis-sugerencias" className="text-text-muted hover:text-text-primary transition-colors">
                     My Suggestions
@@ -42,10 +45,11 @@ export function Navbar() {
                 </li>
               )}
 
+              {/* Panel exclusivo para administradores */}
               {isAdmin && (
                 <li>
                   <Link href="/admin" className="text-accent-cyan hover:underline transition-colors font-mono text-xs px-2 py-1 border border-accent-cyan/30 rounded bg-accent-cyan/10">
-                    [ Admin ]
+                    [ Admin Dashboard ]
                   </Link>
                 </li>
               )}
@@ -108,12 +112,14 @@ export function Navbar() {
                 Problemset
               </Link>
             </li>
-            <li>
-              <Link href="/#submit" onClick={() => setMenuOpen(false)} className="block py-1 text-text-muted hover:text-text-primary">
-                Submit Problem
-              </Link>
-            </li>
-            {isAuthenticated && (
+            {!isAdmin && (
+              <li>
+                <Link href="/#submit" onClick={() => setMenuOpen(false)} className="block py-1 text-text-muted hover:text-text-primary">
+                  Submit Problem
+                </Link>
+              </li>
+            )}
+            {isAuthenticated && !isAdmin && (
               <li>
                 <Link href="/mis-sugerencias" onClick={() => setMenuOpen(false)} className="block py-1 text-text-muted hover:text-text-primary">
                   My Suggestions
