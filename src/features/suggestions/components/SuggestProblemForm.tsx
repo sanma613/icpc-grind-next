@@ -98,7 +98,7 @@ export function SuggestProblemForm() {
       ) : isAdmin ? (
         <div className="p-6 border border-accent-cyan/30 rounded-lg text-center bg-accent-cyan/5">
           <p className="text-text-primary font-semibold mb-2 font-mono text-sm">
-            🛡️ Administrator Mode
+            Administrator Mode
           </p>
           <p className="text-xs text-text-muted mb-4 max-w-md mx-auto">
             As an administrator, you do not need to submit suggestions for review. You can create, edit, and publish challenges directly to the catalog from your management panel.
@@ -120,7 +120,7 @@ export function SuggestProblemForm() {
 
           {successMessage && (
             <div className="p-3 bg-accent-green/10 border border-accent-green/30 rounded text-xs text-accent-green font-medium">
-              ✓ {successMessage}
+              {successMessage}
             </div>
           )}
 

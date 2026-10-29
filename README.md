@@ -4,15 +4,15 @@ Plataforma web full-stack para el entrenamiento en programación competitiva bas
 
 ---
 
-## 🚀 Despliegue y Enlaces
+## Despliegue y Enlaces
 
-- **Frontend en Producción (Vercel):** *[Próximamente al completar el despliegue]*
-- **Backend API (Express + Prisma):** *[Próximamente al completar el despliegue]*
+- **Frontend en Producción (Vercel):** [https://icpc-grind-next.vercel.app](https://icpc-grind-next.vercel.app)
+- **Backend API (Express + Render):** [https://icpc-grind-express.onrender.com](https://icpc-grind-express.onrender.com)
 - **Repositorio Backend:** [https://github.com/sanma613/icpc-grind-express](https://github.com/sanma613/icpc-grind-express)
 
 ---
 
-## 🏛️ Arquitectura del Sistema
+## Arquitectura del Sistema
 
 El proyecto sigue una arquitectura modular orientada al dominio y organizada por **features** (`src/features/`), garantizando separación de responsabilidades y desacoplamiento:
 
@@ -50,7 +50,7 @@ src/
 
 ---
 
-## 📋 Rutas Especificadas en la Rúbrica
+## Rutas Especificadas en la Rúbrica
 
 Todas las rutas respetan estrictamente la nomenclatura exigida:
 
@@ -65,7 +65,7 @@ Todas las rutas respetan estrictamente la nomenclatura exigida:
 
 ---
 
-## 🧩 Componentes Comunes Reutilizables
+## Componentes Comunes Reutilizables
 
 Ubicados en `src/features/common/components/`:
 - **`Button`**: Soporte de variantes (`primary`, `secondary`, `outline`, `danger`), tamaños (`sm`, `md`, `lg`), estado accesible de carga (`isLoading`) y spinners integrados.
@@ -76,7 +76,7 @@ Ubicados en `src/features/common/components/`:
 
 ---
 
-## 🔒 Manejo de Sesión y Seguridad
+## Manejo de Sesión y Seguridad
 
 1. **Tokens y Cookies:** El token JWT se almacena en `localStorage` para el cliente HTTP y en cookies `icpc_token` / `icpc_role` para la verificación en servidor dentro de `proxy.ts` (Next 16).
 2. **Protección en Doble Capa:**
@@ -87,7 +87,7 @@ Ubicados en `src/features/common/components/`:
 
 ---
 
-## 🔄 Modo Mock / Backend Desacoplado
+## Modo Mock / Backend Desacoplado
 
 El frontend incluye una capa de transporte desacoplada mediante `mockServer.ts` controlada por la variable de entorno:
 - `NEXT_PUBLIC_USE_MOCKS=true`: Permite probar el 100% de los flujos de la aplicación sin necesidad de encender el backend (ideal para evaluación estática y pruebas rápidas).
@@ -95,7 +95,7 @@ El frontend incluye una capa de transporte desacoplada mediante `mockServer.ts` 
 
 ---
 
-## 👤 Credenciales de Prueba
+## Credenciales de Prueba
 
 | Rol | Correo Electrónico | Contraseña | Capacidades |
 |---|---|---|---|
@@ -104,7 +104,7 @@ El frontend incluye una capa de transporte desacoplada mediante `mockServer.ts` 
 
 ---
 
-## 💻 Instrucciones de Ejecución Local
+## Instrucciones de Ejecución Local
 
 ### Prerrequisitos
 - Node.js 20.x o superior.
@@ -144,6 +144,6 @@ npm run build
 
 ---
 
-## 🌐 Evidencia de Integración de Red (Pestaña Network)
+## Evidencia de Integración de Red (Pestaña Network)
 
-*(Se incluirá la captura de pantalla de las peticiones HTTP en producción contra el backend Express desplegado).*
+*(Pestaña Network de DevTools evidenciando llamadas HTTP 200 OK con token Bearer hacia el backend desplegado en Render).*

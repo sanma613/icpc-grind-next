@@ -85,7 +85,7 @@ export function AdminSuggestionsTable() {
 
       {feedback && (
         <div className="p-3 rounded text-xs font-mono border bg-accent-green/10 border-accent-green/30 text-accent-green flex justify-between items-center">
-          <span>✓ {feedback}</span>
+          <span>{feedback}</span>
           <button
             type="button"
             onClick={() => setFeedback(null)}
@@ -195,7 +195,7 @@ export function AdminSuggestionsTable() {
                           </>
                         ) : (
                           <span className="text-xs text-text-muted font-mono italic">
-                            {sugg.status === "approved" ? "✓ In Catalog" : "Archived"}
+                            {sugg.status === "approved" ? "In Catalog" : "Archived"}
                           </span>
                         )}
                       </td>
