@@ -175,4 +175,6 @@ Generadas a través del seed oficial de la base de datos:
 
 ### Evidencia de integración de red en la pestaña Network
 
-Captura de pantalla de las herramientas de desarrollo del navegador demostrando peticiones HTTP con estado 200 OK y el encabezado `Authorization: Bearer <token>` dirigidas al backend en Render.
+Peticiones HTTP con estado 200 OK hacia la API en Render con el catálogo de problemas y comunicación activa entre Vercel y Render:
+
+![Evidencia de red en DevTools](./docs/screenshots/network.png)
