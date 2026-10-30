@@ -1,187 +1,180 @@
-# ICPC Grind · Frontend (Entrega 3)
+# ICPC Grind — Frontend Web App (Entrega 3)
 
-Plataforma web full-stack para el entrenamiento en programación competitiva basada en la identidad visual y el catálogo curado de la Entrega 1. Construida con **Next.js 16 (App Router)**, **TypeScript estricto** y **Tailwind CSS v4**.
+Evolución full-stack de la plataforma de entrenamiento para programación competitiva desarrollada en la Entrega 1. El proyecto conserva la identidad visual inspirada en terminales de desarrollo y GitHub (modo oscuro/claro), pero reconstruido sobre una arquitectura moderna basada en **Next.js 16 (App Router)**, **TypeScript estricto** y **Tailwind CSS v4**.
 
----
-
-## Despliegue y Enlaces
-
-- **Frontend en Producción (Vercel):** [https://icpc-grind-next.vercel.app](https://icpc-grind-next.vercel.app)
-- **Backend API (Express + Render):** [https://icpc-grind-express.onrender.com](https://icpc-grind-express.onrender.com)
-- **Repositorio Backend:** [https://github.com/sanma613/icpc-grind-express](https://github.com/sanma613/icpc-grind-express)
+* **Deploy en producción (Frontend):** [https://icpc-grind-next.vercel.app](https://icpc-grind-next.vercel.app)
+* **Backend API en producción (Render):** [https://icpc-grind-express.onrender.com](https://icpc-grind-express.onrender.com)
+* **Repositorio del Backend:** [https://github.com/sanma613/icpc-grind-express](https://github.com/sanma613/icpc-grind-express)
 
 ---
 
-## Arquitectura del Sistema
+### Descripción del proyecto
 
-El proyecto sigue una arquitectura modular orientada al dominio y organizada por **features** (`src/features/`), garantizando separación de responsabilidades y desacoplamiento:
+En la Entrega 1 construí el frontend estático de ICPC Grind con HTML, CSS y TypeScript para centralizar problemas algorítmicos de plataformas como CSES, Codeforces y AtCoder. En esta Entrega 3 di el salto a una aplicación full-stack real: el catálogo ya no es un arreglo en memoria, sino que se consulta de forma paginada y filtrada desde una base de datos PostgreSQL mediante una API REST en Express; el formulario de sugerencias ya no simula agregados locales, sino que persiste las propuestas en la base de datos vinculadas al usuario autenticado; y el acceso al sitio cuenta con un sistema completo de autenticación y autorización basado en JSON Web Tokens (JWT) con separación clara de roles entre competidores y administradores.
+
+---
+
+### Arquitectura del sistema y organización por features
+
+Para mantener el código mantenible y desacoplado, estructuré el proyecto siguiendo el patrón de diseño por características (*feature-based architecture*) propuesto en clase, aislando el enrutamiento dentro de `app/` y organizando la lógica de negocio bajo `src/features/`:
 
 ```
 src/
-├── app/                           # Rutas exclusivas del App Router
-│   ├── layout.tsx                 # Layout global con tema GitHub dark/light
-│   ├── page.tsx                   # Catálogo público con filtros y paginación por URL
-│   ├── login/page.tsx             # Inicio de sesión
-│   ├── registro/page.tsx          # Registro de nuevos competidores
-│   ├── mis-sugerencias/page.tsx   # Panel personal de sugerencias (Ruta protegida)
-│   ├── admin/page.tsx             # Panel de administración y moderación (Ruta protegida admin)
-│   └── not-found.tsx              # Página 404 personalizada con estética terminal
+├── app/                           # Rutas exclusivas del App Router (solo componen vistas)
+│   ├── layout.tsx                 # Envoltorio global con soporte de tema (dark/light)
+│   ├── page.tsx                   # Catálogo público con filtros y paginación sincronizada en URL
+│   ├── login/page.tsx             # Formulario de inicio de sesión
+│   ├── registro/page.tsx          # Formulario de registro de competidores
+│   ├── mis-sugerencias/page.tsx   # Panel personal del usuario (Ruta protegida)
+│   ├── admin/page.tsx             # Panel de gestión y moderación (Ruta protegida para admin)
+│   └── not-found.tsx              # Página 404 personalizada con estética de consola
 ├── features/
-│   ├── common/                    # Componentes reutilizables y cliente HTTP
+│   ├── common/                    # Recursos transversales y utilidades base
 │   │   ├── components/            # Button, Input, Pagination, StatusMessage, ConfirmDialog
-│   │   └── services/              # http.ts (cliente centralizado con interceptor 401) y mockServer.ts
-│   ├── auth/                      # Autenticación, sesión y contexto de usuario
+│   │   ├── services/              # http.ts (cliente centralizado) y mockServer.ts
+│   │   └── config.ts              # Configuración de variables de entorno y API host
+│   ├── auth/                      # Dominio de autenticación y control de sesión
 │   │   ├── domain/                # Tipos de AuthUser, LoginDTO, RegisterDTO
-│   │   ├── services/              # auth.service.ts
-│   │   ├── hooks/                 # useAuth()
-│   │   └── components/            # LoginForm, RegisterForm
-│   ├── problems/                  # Catálogo de problemas de algoritmos
-│   │   ├── domain/                # Problem, ProblemFilter, PaginationMeta
+│   │   ├── services/              # auth.service.ts y session.service.ts
+│   │   ├── hooks/                 # useAuth (estado global del usuario, login, logout)
+│   │   └── components/            # LoginForm y RegisterForm
+│   ├── problems/                  # Catálogo de problemas algorítmicos
+│   │   ├── domain/                # Entidades Problem, ProblemFilter, PaginationMeta
 │   │   ├── services/              # problem.service.ts
-│   │   ├── hooks/                 # useProblems, useAdminProblems
+│   │   ├── hooks/                 # useProblems y useAdminProblems
 │   │   └── components/            # ProblemCatalog, ProblemFiltersBar, AdminProblemsTable, AdminProblemModal
 │   └── suggestions/               # Interacción comunitaria (propuesta de problemas)
 │       ├── domain/                # Suggestion, SuggestionStatus, CreateSuggestionDTO
 │       ├── services/              # suggestion.service.ts
 │       ├── hooks/                 # useMySuggestions, useCreateSuggestion, useAdminSuggestions
 │       └── components/            # SuggestProblemForm, MySuggestionsList, AdminSuggestionsTable
-└── proxy.ts                       # Protección de rutas en el servidor Next 16 (reemplazo de middleware)
+└── proxy.ts                       # Interceptor de servidor en Next.js 16 para protección SSR
 ```
 
+**Regla de consumo de API:** Ningún componente visual ejecuta `fetch` directamente. La comunicación fluye estrictamente a través de la capa de `services/`, expuesta a las vistas mediante hooks personalizados (`useProblems`, `useAuth`, `useCreateSuggestion`, etc.).
+
 ---
 
-## Rutas Especificadas en la Rúbrica
+### Decisiones técnicas
 
-Todas las rutas respetan estrictamente la nomenclatura exigida:
+#### 1. Flujo completo de autenticación (Login)
+1. El competidor ingresa su correo y contraseña en `LoginForm` y envía el formulario.
+2. El formulario realiza una validación previa en el cliente; si es correcta, invoca `authService.login()`.
+3. El servicio realiza una petición `POST /api/auth/login` hacia la API en Express.
+4. En el backend, el caso de uso verifica la existencia del usuario y compara la contraseña contra el hash de PostgreSQL utilizando `bcrypt.compare`.
+5. Al verificar las credenciales, el backend emite un JWT firmado con `JWT_SECRET` y vigencia de 7 días, cuyo payload contiene únicamente `{ sub, email, role }`.
+6. El frontend recibe la respuesta `200 OK`. En `session.service.ts` guardo el token en `localStorage` (para que el cliente HTTP `http.ts` lo agregue a las peticiones del navegador) y simultáneamente en una cookie de sesión `icpc_token` (`SameSite=Lax; Path=/`).
+7. El hook `useAuth` actualiza el estado reactivo de la aplicación y redirige al competidor a `/mis-sugerencias` o al catálogo.
+8. Cuando el usuario navega a una ruta privada como `/admin`, el servidor de Next.js (`proxy.ts`) intercepta la solicitud antes del renderizado, inspecciona la cookie y valida que el rol sea `admin`. Si no cumple los requisitos, redirige de inmediato sin parpadeos de contenido. En paralelo, cada consulta posterior a la API viaja con el encabezado `Authorization: Bearer <token>`.
 
-| Ruta | Acceso | Descripción |
+#### 2. Almacenamiento del token en el frontend y análisis de riesgos
+* **Dónde se almacena:** Implementé un esquema híbrido guardando el token en `localStorage` y en cookies legibles por el cliente (`icpc_token`, `icpc_role`).
+* **Riesgo:** El principal vector de ataque ante esta decisión es el **Cross-Site Scripting (XSS)**. Si un atacante lograra inyectar código JavaScript malicioso en el sitio, podría acceder a `localStorage.getItem("icpc_token")` y sustraer la sesión del usuario.
+* **Justificación técnica y mitigación:** La alternativa estricta consiste en usar cookies con bandera `HttpOnly` emitidas exclusivamente por el backend. Sin embargo, para esta entrega decidí utilizar este esquema porque:
+  1. Permite inyectar explícitamente el encabezado `Authorization: Bearer <token>` en el cliente HTTP, tal como lo exige la rúbrica y se evidencia en la pestaña Network.
+  2. Permite que el middleware de servidor de Next.js (`proxy.ts`) valide el token durante el Server-Side Rendering sin requerir llamadas síncronas bloqueantes al backend en cada petición.
+  3. El riesgo de XSS se mitiga gracias a la arquitectura de React, que escapa automáticamente los valores en el JSX, y al tipado estricto con validaciones rigurosas que impiden inyecciones en el DOM.
+
+#### 3. Diferencia entre HTTP 401 y 403 con ejemplos reales del proyecto
+* **401 Unauthorized (Falta o invalidez de autenticación — "¿Quién eres?"):**
+  Ocurre cuando la petición carece de credenciales o el token presentado no es válido o ya caducó.
+  * *Ejemplo real 1:* Un usuario no autenticado intenta enviar una propuesta a `POST /api/suggestions` o consultar `GET /api/suggestions/mias` sin enviar la cabecera `Authorization`. El backend rechaza la petición con `401 Token no proporcionado o formato inválido`.
+  * *Ejemplo real 2:* Un usuario intenta iniciar sesión en `/login` con una contraseña errónea; el servidor responde `401 Credenciales inválidas` de forma genérica para no revelar si falló el correo o la clave.
+* **403 Forbidden (Falta de permisos o autorización — "Sé quién eres, pero no puedes pasar"):**
+  Ocurre cuando el usuario está debidamente identificado mediante un JWT válido, pero su rol no cuenta con los privilegios suficientes para la acción solicitada.
+  * *Ejemplo real:* Un competidor autenticado con rol `user` (`user@icpc.org`) intenta invocar `DELETE /api/problems/:id` o `POST /api/problems`. El backend verifica que el token es legítimo y pertenece a Santiago, pero el middleware `requireRole("admin")` detiene la ejecución y devuelve `403 No tienes permisos para realizar esta acción`.
+
+#### 4. Uso de Inteligencia Artificial y correcciones realizadas
+* **Para qué se usó:** Todo el diseño del sistema, la separación de responsabilidades y la lógica fueron concebidos por mí. Me apoyé en herramientas de IA como asistente de pair-programming para acelerar el andamiaje inicial (*scaffolding*) de componentes en Tailwind CSS v4, estructurar interfaces de TypeScript y asistir en la redacción técnica de este documento.
+* **Qué tuve que corregir manualmente:**
+  * *Filtros de catálogo y normalización de parámetros:* Inicialmente el backend fallaba con código 400 cuando el frontend enviaba `?topic=all&difficulty=all`. Tuve que corregir la lógica en `problem.service.ts` para depurar los parámetros antes de enviarlos y asegurar que la paginación sincronizara limpiamente con la URL (`?page=2`).
+  * *Ciclo de vida y coherencia en moderación:* La IA generaba botones de `Reject` en sugerencias que ya habían sido aprobadas. Rediseñé la vista de moderación para que por defecto muestre la cola de pendientes (`Pending Review`) y, al ser aprobada, la sugerencia pase a alimentar el catálogo y se retire de la bandeja de acción inmediata.
+  * *Adaptación a Next.js 16:* Tuve que migrar la protección de rutas del antiguo `middleware.ts` al nuevo estándar `proxy.ts`, resolviendo la decodificación de cookies y previniendo saltos de pantalla en rutas protegidas.
+  * *Eliminación de emojis:* Removí todos los emojis generados en componentes, scripts y documentación para asegurar un estándar visual riguroso, limpio y profesional.
+
+---
+
+### Rutas especificadas en la rúbrica
+
+| Ruta | Nivel de Acceso | Comportamiento |
 |---|---|---|
-| `/` | Público | Catálogo interactivo de problemas con paginación sincronizada en la URL (`?page=2`), búsqueda y filtros en tiempo real. |
-| `/login` | Público (Redirige si ya hay sesión) | Formulario de autenticación con validación y errores adyacentes a cada campo. |
-| `/registro` | Público (Redirige si ya hay sesión) | Registro de cuenta para nuevos competidores. |
-| `/mis-sugerencias` | Privado (`user` / `admin`) | Listado histórico de problemas sugeridos por el competidor autenticado. |
-| `/admin` | Privado (`admin`) | Panel de control administrativo con CRUD de catálogo, modal de confirmación antes de eliminar y moderación de sugerencias comunitarias. |
-| `not-found.tsx` | Público | Vista terminal de ruta no encontrada con opciones de retorno seguro. |
+| `/` | Público | Catálogo interactivo de problemas con búsqueda en vivo, filtros y paginación sincronizada en URL (`?page=2`). |
+| `/login` | Público (con redirección) | Formulario con validación en línea. Si ya existe sesión activa, redirige automáticamente al catálogo. |
+| `/registro` | Público (con redirección) | Registro de competidores. Redirige al inicio si el usuario ya está autenticado. |
+| `/mis-sugerencias` | Privado (`user` / `admin`) | Listado histórico de los problemas propuestos por el usuario en sesión. Sin sesión redirige a `/login`. |
+| `/admin` | Privado (`admin`) | Panel de control: CRUD completo de problemas y moderación de propuestas comunitarias. Un `user` común es redirigido. |
+| `not-found.tsx` | Público | Vista terminal 404 personalizada con opciones de retorno seguro. |
 
 ---
 
-## Componentes Comunes Reutilizables
+### Componentes comunes reutilizables
 
-Ubicados en `src/features/common/components/`:
-- **`Button`**: Soporte de variantes (`primary`, `secondary`, `outline`, `danger`), tamaños (`sm`, `md`, `lg`), estado accesible de carga (`isLoading`) y spinners integrados.
-- **`Input`**: Campo de formulario con soporte de label, error adyacente (`error`), helper text, modo monoespaciado y toggling de visibilidad de contraseñas.
-- **`Pagination`**: Paginación accesible con indicador descriptivo de rango (*Showing 1 to 10 of 25 items*), botones de Previous / Next y páginas numéricas.
-- **`StatusMessage`**: Alertas semánticas (`success`, `error`, `info`, `warning`) con soporte para título, mensaje y botón de reintento (`onRetry`).
-- **`ConfirmDialog`**: Modal accesible para acciones destructivas (cumple criterio de confirmación antes de eliminar con **+1 punto de bonificación**).
-
----
-
-## Manejo de Sesión y Seguridad
-
-1. **Tokens y Cookies:** El token JWT se almacena en `localStorage` para el cliente HTTP y en cookies `icpc_token` / `icpc_role` para la verificación en servidor dentro de `proxy.ts` (Next 16).
-2. **Protección en Doble Capa:**
-   - **Servidor (`proxy.ts`):** Valida la presencia y expiración del JWT antes de renderizar rutas protegidas como `/mis-sugerencias` y `/admin`.
-   - **Cliente (`useAuth`):** Mantiene el estado reactivo del usuario y previene destellos de contenido desautorizado.
-3. **Manejo Centralizado de Errores 401:** Si el backend o el mock emiten un 401, el cliente HTTP purga la sesión y redirige inmediatamente al usuario a `/login`.
-4. **Validación de Formularios:** Los errores de validación devueltos por el backend se asocian de manera adyacente a cada campo específico.
+Desarrollados bajo `src/features/common/components/` para evitar código duplicado:
+* **`Button`:** Soporta variantes (`primary`, `secondary`, `outline`, `danger`), tamaños (`sm`, `md`, `lg`), estado de carga (`isLoading`) y accesibilidad por teclado.
+* **`Input`:** Control de formulario con manejo adyacente de errores (`error`), etiqueta vinculada por ID y opción monoespaciada para enlaces y nombres de ejercicios.
+* **`Pagination`:** Paginación accesible con indicador de rango (*Showing 1 to 10 of 25 items*), botones de desplazamiento y cálculo automático de páginas.
+* **`StatusMessage`:** Componente para estados de carga, vacío y error con botón de reintento (`onRetry`).
+* **`ConfirmDialog`:** Modal accesible para operaciones destructivas (utilizado antes de eliminar problemas del catálogo, sumando **+1 punto de bonificación**).
 
 ---
 
-## Modo Mock / Backend Desacoplado
+### Retos técnicos durante el desarrollo
 
-El frontend incluye una capa de transporte desacoplada mediante `mockServer.ts` controlada por la variable de entorno:
-- `NEXT_PUBLIC_USE_MOCKS=true`: Permite probar el 100% de los flujos de la aplicación sin necesidad de encender el backend (ideal para evaluación estática y pruebas rápidas).
-- `NEXT_PUBLIC_USE_MOCKS=false`: Conecta la aplicación directamente a la API REST de Express mediante `NEXT_PUBLIC_API_HOST`.
+1. **Protección de rutas en Next.js 16 con `proxy.ts`:**
+   En Next.js 16 la convención de middleware cambió. El reto consistió en estructurar un interceptor en el servidor que decodificara el token empaquetado en la cookie sin sobrecargar el bundle de Edge runtime, permitiendo evaluar tanto la presencia del JWT como el rol del usuario antes de servir la página.
+2. **Sincronización bidireccional entre la URL y el catálogo:**
+   Para cumplir la rúbrica de mantener la paginación y filtros en la URL (`?page=2`), debí coordinar `useSearchParams` y `useRouter` de Next.js para que los cambios en los filtros reiniciaran la paginación a la página 1 sin generar bucles infinitos de renderizado.
+3. **Separación de flujos de usuario vs. administrador:**
+   Un usuario normal requiere sugerir problemas a través del formulario `#submit` y revisar el veredicto en `/mis-sugerencias`. Para un administrador este flujo resultaba redundante (no tiene sentido auto-sugerirse un ejercicio para luego auto-aprobárselo). Resolví esto adaptando la barra de navegación y la Home para que el administrador acceda directamente al panel donde puede publicar ejercicios de forma inmediata en el catálogo.
 
 ---
 
-## Credenciales de Prueba
+### Credenciales de prueba
 
-| Rol | Correo Electrónico | Contraseña | Capacidades |
+Generadas a través del seed oficial de la base de datos:
+
+| Rol | Correo Electrónico | Contraseña | Permisos |
 |---|---|---|---|
 | **Administrador** | `admin@icpc.org` | `Admin123*` | Acceso a `/admin`, CRUD de problemas, moderación de sugerencias |
-| **Competidor** | `user@icpc.org` | `User123*` | Acceso a `/mis-sugerencias`, proponer problemas en catálogo |
+| **Competidor** | `user@icpc.org` | `User123*` | Acceso a `/mis-sugerencias`, envío de propuestas en `#submit` |
 
 ---
 
-## Instrucciones de Ejecución Local
+### Instrucciones de ejecución local
 
-### Prerrequisitos
-- Node.js 20.x o superior.
-- npm 10.x o superior.
+1. Clonar el repositorio e instalar dependencias:
+   ```bash
+   git clone https://github.com/sanma613/icpc-grind-next.git
+   cd icpc-grind-next
+   npm install
+   ```
 
-### 1. Clonar e Instalar Dependencias
-```bash
-git clone https://github.com/sanma613/icpc-grind-next.git
-cd icpc-grind-next
-npm install
-```
+2. Configurar variables de entorno:
+   ```bash
+   cp .env.example .env.local
+   ```
+   Asegurar que `.env.local` contenga:
+   ```env
+   NEXT_PUBLIC_API_HOST="http://localhost:4000"
+   NEXT_PUBLIC_USE_MOCKS=false
+   ```
+   *(Nota: Si deseas probar el frontend de forma desacoplada sin levantar el backend, puedes fijar `NEXT_PUBLIC_USE_MOCKS=true`).*
 
-### 2. Configurar Variables de Entorno
-Copia el archivo de ejemplo:
-```bash
-cp .env.example .env.local
-```
-Edita `.env.local` si deseas cambiar el host de la API o desactivar los mocks.
+3. Iniciar el servidor de desarrollo:
+   ```bash
+   npm run dev
+   ```
+   Abrir [http://localhost:3000](http://localhost:3000) en el navegador.
 
-### 3. Ejecutar en Modo Desarrollo
-```bash
-npm run dev
-```
-Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
-
-### 4. Validar Calidad de Código
-```bash
-# Comprobación de tipos de TypeScript
-npx tsc --noEmit
-
-# Linter de Next.js / ESLint
-npm run lint
-
-# Build de producción
-npm run build
-```
+4. Validar compilación y tipos:
+   ```bash
+   npx tsc --noEmit
+   npm run lint
+   npm run build
+   ```
 
 ---
 
-## Decisiones Técnicas
+### Evidencia de integración de red (Pestaña Network)
 
-### 1. Flujo completo de autenticación (Login)
-1. El usuario completa sus credenciales en `LoginForm` (`email` y `password`) y envía el formulario.
-2. `auth.service.ts` despacha una solicitud `POST /api/auth/login` hacia la API en Express.
-3. En el backend, el middleware `validate` comprueba el esquema Zod; `AuthUseCases.login` busca al usuario en PostgreSQL y verifica la contraseña con `bcrypt.compare`.
-4. Si las credenciales coinciden, `TokenService` emite un JWT firmado con `JWT_SECRET`, vigencia de 7 días y payload mínimo (`sub`, `email`, `role`).
-5. El frontend recibe el token y `session.service.ts` lo almacena tanto en `localStorage` (para peticiones API del cliente HTTP) como en cookies `icpc_token` e `icpc_role` (`SameSite=Lax`, `Path=/`).
-6. `useAuth` actualiza el estado global de React y redirige al usuario a `/mis-sugerencias` o al catálogo.
-7. Al navegar a una ruta protegida (ej: `/admin`), el servidor en `proxy.ts` (Next 16) intercepta la petición, verifica la cookie y el rol antes de emitir HTML. Posteriormente, `http.ts` adjunta `Authorization: Bearer <token>` en cada consulta al backend, donde los middlewares `authenticate` y `requireRole` validan los permisos.
-
-### 2. Almacenamiento del token y riesgos de seguridad
-- **Ubicación:** El JWT se almacena en `localStorage` y en cookies accesibles por JavaScript.
-- **Riesgo:** La exposición a ataques **XSS (Cross-Site Scripting)**. Si un script malicioso lograra ejecutarse en el navegador, podría leer el token y exfiltrarlo.
-- **Justificación y mitigación:** La alternativa blindada contra XSS son cookies con atributo `HttpOnly` emitidas desde el backend. Sin embargo, para esta entrega se optó por este esquema híbrido para permitir:
-  1. La inyección explícita del encabezado `Authorization: Bearer <token>` visible en la pestaña Network requerida por la rúbrica.
-  2. La validación inmediata en el servidor de Next.js (`proxy.ts`) sin requerir roundtrips síncronos adicionales en cada render.
-  3. El riesgo se mitiga mediante la arquitectura de componentes de React (que escapa cadenas por defecto contra inyecciones HTML), tipado estricto en TypeScript y validación rigurosa de inputs.
-
-### 3. Diferencia entre HTTP 401 y 403 con ejemplos reales del proyecto
-- **401 Unauthorized (Falta o falla de autenticación - ¿Quién eres?):**
-  - Ocurre cuando el cliente no envía credenciales o el token no es válido o ya expiró.
-  - *Ejemplo real 1:* Intentar consultar `GET /api/suggestions/mias` o enviar `POST /api/suggestions` sin cabecera `Authorization` o con un token alterado.
-  - *Ejemplo real 2:* Ingresar una contraseña incorrecta en `POST /api/auth/login` (responde `401 Credenciales inválidas` de forma genérica).
-- **403 Forbidden (Falta de autorización o permisos - Sé quién eres, pero no tienes permiso):**
-  - Ocurre cuando el usuario está correctamente autenticado con un JWT válido, pero su rol no tiene privilegios para ejecutar la acción solicitada.
-  - *Ejemplo real:* Un usuario con rol `user` (`user@icpc.org`) que intenta ejecutar `DELETE /api/problems/1` o `POST /api/problems`. El backend reconoce su identidad, pero el middleware `requireRole("admin")` deniega la operación con `403`.
-
-### 4. Uso de Inteligencia Artificial y correcciones realizadas
-- **Para qué se usó:** Como asistente de desarrollo en pair-programming para acelerar el andamiaje (*scaffolding*) de la arquitectura en 4 capas limpias en Express + TypeScript, el tipado de contratos de repositorios y la adaptación de los estilos de la Entrega 1 a clases utilitarias de Tailwind CSS v4.
-- **Qué se tuvo que corregir y ajustar manualmente:**
-  - *Normalización de filtros en la API:* Zod rechazaba peticiones con `?topic=all&difficulty=all` con error 400; se implementó `.transform()` en los DTOs del backend y se limpiaron parámetros vacíos en `problem.service.ts`.
-  - *Consistencia en moderación:* Se rediseñó el flujo de sugerencias para que por defecto muestre la bandeja `Pending Review (Inbox)`, retirando botones de acción en elementos ya aprobados y sincronizando la base de datos al eliminar problemas del catálogo.
-  - *Compatibilidad Next.js 16:* Se adaptó el middleware al nuevo estándar `proxy.ts`, resolviendo la decodificación de cookies y la protección SSR.
-  - *Eliminación de emojis:* Se removieron todos los emojis en componentes, scripts de backend, logs de consola y documentación para garantizar un estándar sobrio y profesional.
-
----
-
-## Evidencia de Integración de Red (Pestaña Network)
-
-*(Pestaña Network de DevTools evidenciando llamadas HTTP 200 OK con token Bearer hacia el backend desplegado en Render).*
+*(Captura de pantalla de las herramientas de desarrollo del navegador demostrando peticiones HTTP con estado 200 OK y el encabezado `Authorization: Bearer <token>` dirigidas al backend en Render).*
